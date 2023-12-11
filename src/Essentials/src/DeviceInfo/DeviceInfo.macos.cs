@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Foundation;
+using Microsoft.Maui.ApplicationModel;
 using ObjCRuntime;
 
 namespace Microsoft.Maui.Devices

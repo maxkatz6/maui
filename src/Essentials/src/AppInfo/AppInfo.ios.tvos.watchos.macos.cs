@@ -36,9 +36,12 @@ namespace Microsoft.Maui.ApplicationModel
 		{
 			MainThread.BeginInvokeOnMainThread(() =>
 			{
-				var prefsApp = ScriptingBridge.SBApplication.FromBundleIdentifier("com.apple.systempreferences");
-				prefsApp.SendMode = ScriptingBridge.AESendMode.NoReply;
-				prefsApp.Activate();
+				var prefsApp = ScriptingBridge.SBApplication.GetApplication("com.apple.systempreferences");
+				if (prefsApp is not null)
+				{
+					prefsApp.SendMode = ScriptingBridge.AESendMode.NoReply;
+					prefsApp.Activate();
+				}
 			});
 		}
 #else
@@ -75,7 +78,7 @@ namespace Microsoft.Maui.ApplicationModel
 			{
 				if (OperatingSystem.IsMacOSVersionAtLeast(10, 14))
 				{
-					var app = NSAppearance.CurrentAppearance?.FindBestMatch(new string[]
+					var app = NSApplication.SharedApplication.EffectiveAppearance?.FindBestMatch(new string[]
 					{
 						NSAppearance.NameAqua,
 						NSAppearance.NameDarkAqua
@@ -110,8 +113,13 @@ namespace Microsoft.Maui.ApplicationModel
 			}
 		}
 #elif __MACOS__
-		public bool IsDeviceUILayoutDirectionRightToLeft => 
-			NSApplication.SharedApplication.UserInterfaceLayoutDirection == NSApplicationLayoutDirection.RightToLeft;
+		public LayoutDirection RequestedLayoutDirection => 
+			NSApplication.SharedApplication.UserInterfaceLayoutDirection switch
+			{
+				NSUserInterfaceLayoutDirection.LeftToRight => LayoutDirection.LeftToRight,
+				NSUserInterfaceLayoutDirection.RightToLeft => LayoutDirection.RightToLeft,
+				_ => throw new ArgumentOutOfRangeException()
+			};
 #endif
 
 		internal static bool VerifyHasUrlScheme(string scheme)

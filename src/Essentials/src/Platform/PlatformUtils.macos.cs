@@ -4,6 +4,7 @@ using AppKit;
 using CoreFoundation;
 using CoreVideo;
 using Foundation;
+using Microsoft.Maui.Devices;
 using ObjCRuntime;
 
 namespace Microsoft.Maui.ApplicationModel
@@ -23,8 +24,6 @@ namespace Microsoft.Maui.ApplicationModel
 
 	static class CoreGraphicsInterop
 	{
-		public static uint MainDisplayId => CGMainDisplayID();
-
 		[DllImport(Constants.CoreGraphicsLibrary)]
 		static extern IntPtr CGDisplayCopyDisplayMode(uint display);
 
@@ -33,13 +32,10 @@ namespace Microsoft.Maui.ApplicationModel
 
 		[DllImport(Constants.CoreGraphicsLibrary)]
 		static extern double CGDisplayModeGetRefreshRate(IntPtr mode);
-
-		[DllImport(Constants.CoreGraphicsLibrary)]
-		static extern uint CGMainDisplayID();
-
-		public static double GetRefreshRate(uint display)
+		
+		public static double GetRefreshRate(int display)
 		{
-			var mode = CGDisplayCopyDisplayMode(display);
+			var mode = CGDisplayCopyDisplayMode((uint)display);
 			if (mode == IntPtr.Zero)
 				return 0.0;
 
@@ -56,13 +52,16 @@ namespace Microsoft.Maui.ApplicationModel
 		[DllImport(Constants.CoreGraphicsLibrary)]
 		static extern int CVDisplayLinkCreateWithCGDisplay(uint display, out IntPtr handle);
 
-		public static double GetRefreshRate(uint display)
+		public static double GetRefreshRate(int display)
 		{
-			var result = CVDisplayLinkCreateWithCGDisplay(display, out var handle);
-			if (result != 0 || handle == IntPtr.Zero)
+			// As per https://developer.apple.com/documentation/corevideo/1456981-cvdisplaylinkcreatewithcgdisplay?language=objc
+			// And https://github.com/xamarin/xamarin-macios/blob/eb973ea0d6aecee1045caecc5679015f5ca9f6d9/src/CoreVideo/CVDisplayLink.cs#L90C12-L90C44
+			// This method should be available since macOS 10.4+.
+#pragma warning disable CA1416
+			using var dl = CVDisplayLink.CreateFromDisplayId((uint)display);
+#pragma warning restore CA1416
+			if (dl is null)
 				return 0.0;
-
-			using var dl = new CVDisplayLink(handle);
 
 			var period = dl.NominalOutputVideoRefreshPeriod;
 			if (((CVTimeFlags)period.Flags).HasFlag(CVTimeFlags.IsIndefinite) || period.TimeValue == 0)
@@ -106,9 +105,6 @@ namespace Microsoft.Maui.ApplicationModel
 
 		[DllImport(IOKitLibrary)]
 		static extern IntPtr IOPSGetPowerSourceDescription(IntPtr blob, IntPtr ps);
-
-		[DllImport(IOKitLibrary)]
-		static extern IntPtr IOPSNotificationCreateRunLoopSource(IOPowerSourceCallback callback, IntPtr context);
 
 		[DllImport(IOKitLibrary)]
 		static extern uint IOServiceGetMatchingService(uint masterPort, IntPtr matching);
@@ -321,14 +317,21 @@ namespace Microsoft.Maui.ApplicationModel
 
 		internal static CFRunLoopSource CreatePowerSourceNotification(Action callback)
 		{
-			var sourceRef = IOPSNotificationCreateRunLoopSource(new IOPowerSourceCallback(_ => callback()), IntPtr.Zero);
-
-			if (sourceRef == default)
-				return null;
-
-			return new CFRunLoopSource(sourceRef, true);
+			return new EssentialsCFRunLoopSourceCustom(callback);
 		}
 
-		delegate void IOPowerSourceCallback(IntPtr context);
+		private class EssentialsCFRunLoopSourceCustom : CFRunLoopSourceCustom
+		{
+			readonly Action _callback;
+
+			public EssentialsCFRunLoopSourceCustom(Action callback)
+			{
+				_callback = callback;
+			}
+
+			protected override void OnSchedule(CFRunLoop loop, NSString mode) => _callback();
+			protected override void OnCancel(CFRunLoop loop, NSString mode) => _callback();
+			protected override void OnPerform() => _callback();
+		}
 	}
 }

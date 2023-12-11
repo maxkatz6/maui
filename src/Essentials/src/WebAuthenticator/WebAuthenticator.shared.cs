@@ -121,7 +121,7 @@ namespace Microsoft.Maui.Authentication
 		/// <inheritdoc cref="IPlatformWebAuthenticatorCallback.OpenUrlCallback(Uri)"/>
 		public static bool OpenUrl(this IWebAuthenticator webAuthenticator, Uri uri) =>
 			webAuthenticator.AsPlatformCallback().OpenUrlCallback(uri);
-
+#elif IOS || MACCATALYST
 		/// <inheritdoc cref="ApplicationModel.Platform.OpenUrl(UIKit.UIApplication, Foundation.NSUrl, Foundation.NSDictionary)"/>
 		public static bool OpenUrl(this IWebAuthenticator webAuthenticator, UIKit.UIApplication app, Foundation.NSUrl url, Foundation.NSDictionary options) 
 		{

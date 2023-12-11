@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using AppKit;
 using AuthenticationServices;
 using Foundation;
+using Microsoft.Maui.ApplicationModel;
 
 namespace Microsoft.Maui.Authentication
 {
@@ -11,15 +12,16 @@ namespace Microsoft.Maui.Authentication
 		const int asWebAuthenticationSessionErrorCodeCanceledLogin = 1;
 		const string asWebAuthenticationSessionErrorDomain = "com.apple.AuthenticationServices.WebAuthenticationSession";
 
-		readonly CallBackHelper callbackHelper = new CallBackHelper();
+		readonly CallBackHelper callbackHelper;
 
 		TaskCompletionSource<WebAuthenticatorResult> tcsResponse;
 		Uri redirectUri;
 
 		ASWebAuthenticationSession was;
 
-		WebAuthenticatorImplementation()
+		internal WebAuthenticatorImplementation()
 		{
+			callbackHelper = new CallBackHelper(this);
 			callbackHelper.Register();
 		}
 
@@ -28,7 +30,7 @@ namespace Microsoft.Maui.Authentication
 			var url = webAuthenticatorOptions?.Url;
 			var callbackUrl = webAuthenticatorOptions?.CallbackUrl;
 
-			if (!AppInfo.VerifyHasUrlScheme(callbackUrl.Scheme))
+			if (!AppInfoImplementation.VerifyHasUrlScheme(callbackUrl.Scheme))
 				throw new InvalidOperationException("You must register your URL Scheme handler in your app's Info.plist!");
 
 			// Cancel any previous task that's still pending
@@ -41,7 +43,7 @@ namespace Microsoft.Maui.Authentication
 
 			if (OperatingSystem.IsMacOSVersionAtLeast(10, 15))
 			{
-				static void AuthSessionCallback(NSUrl cbUrl, NSError error)
+				void AuthSessionCallback(NSUrl cbUrl, NSError error)
 				{
 					if (error == null)
 						OpenUrlCallback(cbUrl);
@@ -57,7 +59,7 @@ namespace Microsoft.Maui.Authentication
 
 				using (was)
 				{
-					var ctx = new ContextProvider(Platform.GetCurrentWindow());
+					var ctx = new ContextProvider(PlatformUtils.GetCurrentWindow());
 					was.PresentationContextProvider = ctx;
 					was.PrefersEphemeralWebBrowserSession = webAuthenticatorOptions?.PrefersEphemeralWebBrowserSession ?? false;
 
@@ -108,6 +110,13 @@ namespace Microsoft.Maui.Authentication
 
 		class CallBackHelper : NSObject
 		{
+			readonly WebAuthenticatorImplementation _impl;
+
+			public CallBackHelper(WebAuthenticatorImplementation impl)
+			{
+				_impl = impl;
+			}
+			
 			public void Register()
 			{
 				NSAppleEventManager.SharedAppleEventManager.SetEventHandler(
@@ -122,7 +131,7 @@ namespace Microsoft.Maui.Authentication
 			{
 				var url = evt.ParamDescriptorForKeyword(DirectObject).StringValue;
 				var uri = new Uri(url);
-				OpenUrlCallback(WebUtils.GetNativeUrl(uri));
+				_impl.OpenUrlCallback(WebUtils.GetNativeUrl(uri));
 			}
 
 			static uint GetDescriptor(string s) =>

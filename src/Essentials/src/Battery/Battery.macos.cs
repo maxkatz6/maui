@@ -1,4 +1,3 @@
-using System;
 using CoreFoundation;
 
 namespace Microsoft.Maui.Devices

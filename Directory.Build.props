@@ -124,6 +124,12 @@
     <MauiGraphicsPlatforms Condition="'$(IncludeMacOSTargetFrameworks)' == 'true'">$(MauiGraphicsPlatforms);net$(_MauiDotNetVersion)-macos</MauiGraphicsPlatforms>
     <MauiGraphicsPreviousPlatforms>$(MauiPreviousPlatforms)</MauiGraphicsPreviousPlatforms>
     <MauiGraphicsPreviousPlatforms Condition="'$(IncludeMacOSTargetFrameworks)' == 'true'">$(MauiGraphicsPreviousPlatforms);net$(_MauiPreviousDotNetVersion)-macos</MauiGraphicsPreviousPlatforms>
+
+    <!-- Essentials TFMs -->
+    <MauiEssentialsPlatforms>$(MauiPlatforms)</MauiEssentialsPlatforms>
+    <MauiEssentialsPlatforms Condition="'$(IncludeMacOSTargetFrameworks)' == 'true'">$(MauiGraphicsPlatforms);net$(_MauiDotNetVersion)-macos</MauiEssentialsPlatforms>
+    <MauiEssentialsPreviousPlatforms>$(MauiPreviousPlatforms)</MauiEssentialsPreviousPlatforms>
+    <MauiEssentialsPreviousPlatforms Condition="'$(IncludeMacOSTargetFrameworks)' == 'true'">$(MauiGraphicsPreviousPlatforms);net$(_MauiPreviousDotNetVersion)-macos</MauiEssentialsPreviousPlatforms>
   </PropertyGroup>
 
   <PropertyGroup>

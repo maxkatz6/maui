@@ -26,6 +26,6 @@ namespace Microsoft.Maui.ApplicationModel
 		}
 
 		Task<bool> PlatformOpenAsync(OpenFileRequest request) =>
-			Task.FromResult(NSWorkspace.SharedWorkspace.OpenFile(request.File.FullPath));
+			Task.FromResult(NSWorkspace.SharedWorkspace.OpenUrl(new NSUrl(request.File.FullPath, false)));
 	}
 }

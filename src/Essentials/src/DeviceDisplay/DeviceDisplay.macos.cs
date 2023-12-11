@@ -1,12 +1,11 @@
 #nullable enable
-using System;
 using AppKit;
-using CoreVideo;
 using Foundation;
+using Microsoft.Maui.ApplicationModel;
 
 namespace Microsoft.Maui.Devices
 {
-	class DeviceDisplayImplementation : IDeviceDisplay
+	partial class DeviceDisplayImplementation : IDeviceDisplay
 	{
 		uint keepScreenOnId = 0;
 		NSObject? screenMetricsObserver;
@@ -15,7 +14,7 @@ namespace Microsoft.Maui.Devices
 
 		protected override void SetKeepScreenOn(bool keepScreenOn)
 		{
-			if (KeepScreenOn == value)
+			if (KeepScreenOn == (keepScreenOnId != 0))
 				return;
 
 			if (keepScreenOn)
@@ -34,8 +33,7 @@ namespace Microsoft.Maui.Devices
 			var mainScreen = NSScreen.MainScreen;
 			var frame = mainScreen.Frame;
 			var scale = mainScreen.BackingScaleFactor;
-
-			var mainDisplayId = CoreGraphicsInterop.MainDisplayId;
+			var mainDisplayId = CoreGraphics.CGDisplay.MainDisplayID;
 
 			// try determine the refresh rate, but fall back to 60Hz
 			var refreshRate = CoreGraphicsInterop.GetRefreshRate(mainDisplayId);

@@ -7,8 +7,8 @@ namespace Microsoft.Maui.ApplicationModel.DataTransfer
 {
 	partial class ClipboardImplementation : IClipboard
 	{
-		readonly string pasteboardType = NSPasteboard.NSPasteboardTypeString;
-		readonly string[] pasteboardTypes = { pasteboardType };
+		static readonly string pasteboardType = NSPasteboard.NSPasteboardTypeString;
+		static readonly string[] pasteboardTypes = { pasteboardType };
 
 		NSPasteboard Pasteboard => NSPasteboard.GeneralPasteboard;
 
